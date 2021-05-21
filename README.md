@@ -92,6 +92,10 @@ set var = [div $var 2]
 
 print [con "Var is: " $var]
 ```
+Note that [] Expressions can be nested.
+```
+set var = [add [mul 5 3] 5]
+```
 
 ### Comments
 To make a comment just use the # or ; prefix.
