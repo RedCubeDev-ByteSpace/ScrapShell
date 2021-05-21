@@ -1,0 +1,18 @@
+:start
+color 15
+
+write "how many loops?  >> "
+set amountLoops = [input]
+set loops = 0
+
+color 6
+:loop
+
+print [con "loop number " $loops]
+set loops = [add $loops 1]
+
+if $loops < $amountLoops loop
+
+color 10
+print "don!"
+goto start

@@ -1,0 +1,244 @@
+set statements <- make Statement array(0);
+
+function Parse()
+{
+    pointer <- 0;
+
+    while (~Cur()->Type != "EOF")
+    {
+        if (~Cur()->Type = "whitespace") { pointer++; continue; }
+
+        if (~Cur()->Type = "keyword")
+        {
+            statements->Push(ParseKeyword());
+        }
+        else if (~Cur()->Type = "labelprefix")
+            statements->Push(ParseLabel());
+        else
+        {
+            Print("You can only use Statements globally! Got: " + ~Cur()->Type);
+            die(0);
+        }
+    }
+}
+
+function ParseKeyword() Statement
+{
+    if (string(~Cur()->Value) = "print")
+    {
+        return ParsePrint();
+    }
+    else if (string(~Cur()->Value) = "write")
+    {
+        return ParseWrite();
+    }
+    else if (string(~Cur()->Value) = "clear")
+    {
+        return ParseClear();
+    }
+    else if (string(~Cur()->Value) = "color")
+    {
+        return ParseColor();
+    }
+    else if (string(~Cur()->Value) = "input")
+    {
+        return ParseInput();
+    }
+    else if (string(~Cur()->Value) = "set")
+    {
+        return ParseSet();
+    }
+    else if (string(~Cur()->Value) = "sleep")
+    {
+        return ParseSleep();
+    }
+    else if (string(~Cur()->Value) = "goto")
+    {
+        return ParseGoto();
+    }
+    else if (string(~Cur()->Value) = "if")
+    {
+        return ParseIf();
+    }
+    else if (string(~Cur()->Value) = "add")
+    {
+        return ParseMath();
+    }
+    else if (string(~Cur()->Value) = "sub")
+    {
+        return ParseMath();
+    }
+    else if (string(~Cur()->Value) = "mul")
+    {
+        return ParseMath();
+    }
+    else if (string(~Cur()->Value) = "div")
+    {
+        return ParseMath();
+    }
+    else if (string(~Cur()->Value) = "con")
+    {
+        return ParseMath();
+    }
+
+    SetConsoleForeground(12); Print("[!] Couldnt find Keyword '" + ~Cur()->Value + "'");
+    die(0);
+    return make Statement("", ExpressionArr(nil));
+}
+
+//Expression parsing
+function ParseExpression() Expression
+{
+    Skip()
+
+    if (~Cur()->Type = "string")
+        return make Expression("string", ~Consume("string")->Value, nil, Expression(nil), Expression(nil));
+    if (~Cur()->Type = "number")
+        return make Expression("number", ~Consume("number")->Value, nil, Expression(nil), Expression(nil));
+    else if (~Cur()->Type = "varprefix")
+    {
+        Consume("varprefix");
+        Skip()
+        return make Expression("variable", ~Consume("keyword")->Value, nil, Expression(nil), Expression(nil));
+    }
+    else if (~Cur()->Type = "openbracket")
+    {
+        Consume("openbracket");
+        Skip()
+        var stmt <- make Expression("statement", "", ParseKeyword(), Expression(nil), Expression(nil));
+        Consume("closebracket");
+        return stmt;
+    }
+
+    SetConsoleForeground(12);
+    Print("[!] Couldnt Parse Expression! Got: " + ~Cur()->Type);
+    die(0);
+    return make Expression("nil", "", nil, Expression(nil), Expression(nil));
+}
+
+//Statement parsing
+function ParsePrint() Statement
+{
+    var print <- Consume("keyword");
+    var arr <- make Expression array(0);
+
+    arr->Push(ParseExpression());
+
+    return make Statement(print->Value, arr);
+}
+
+function ParseWrite() Statement
+{
+    var write <- Consume("keyword");
+    var arr <- make Expression array(0);
+
+    arr->Push(ParseExpression());
+
+    return make Statement(write->Value, arr);
+}
+
+function ParseClear() Statement
+{
+    var clear <- Consume("keyword");
+    var arr <- make Expression array(0);
+
+    return make Statement(clear->Value, arr);
+}
+
+function ParseColor() Statement
+{
+    var color <- Consume("keyword");
+    var arr <- make Expression array(0);
+
+    arr->Push(ParseExpression());
+
+    return make Statement(color->Value, arr);
+}
+
+function ParseInput() Statement
+{
+    var input <- Consume("keyword");
+    var arr <- make Expression array(0);
+
+    return make Statement(input->Value, arr);
+}
+
+function ParseSet() Statement
+{
+    var setkw <- Consume("keyword");
+    var arr <- make Expression array(0);
+    arr->Push(make Expression("indentifier", ~Consume("keyword")->Value, nil, Expression(nil), Expression(nil)));
+    Consume("equals");
+    arr->Push(ParseExpression());
+
+    return make Statement(setkw->Value, arr);
+}
+
+function ParseLabel() Statement
+{
+    Consume("labelprefix");
+    var arr <- make Expression array(0);
+    arr->Push(make Expression("indentifier", ~Consume("keyword")->Value, nil, Expression(nil), Expression(nil)));
+
+    return make Statement("label", arr);
+}
+
+function ParseGoto() Statement
+{
+    var goto <- Consume("keyword");
+    var arr <- make Expression array(0);
+    arr->Push(make Expression("indentifier", ~Consume("keyword")->Value, nil, Expression(nil), Expression(nil)));
+
+    return make Statement(goto->Value, arr);
+}
+
+function ParseSleep() Statement
+{
+    var sleep <- Consume("keyword");
+    var arr <- make Expression array(0);
+    arr->Push(ParseExpression());
+
+    return make Statement(sleep->Value, arr);
+}
+
+function ParseIf() Statement
+{
+    var ifkw <- Consume("keyword");
+    var arr <- make Expression array(0);
+    arr->Push(ParseExpression());
+    arr->Push(make Expression("operator", ~ConsumeNext()->Value, nil, Expression(nil), Expression(nil)));
+    arr->Push(ParseExpression());
+    arr->Push(make Expression("indentifier", ~Consume("keyword")->Value, nil, Expression(nil), Expression(nil)));
+
+    return make Statement(ifkw->Value, arr);
+}
+
+function ParseMath() Statement
+{
+    var op <- Consume("keyword");
+    var arr <- make Expression array(0);
+    arr->Push(ParseExpression());
+    arr->Push(ParseExpression());
+
+    return make Statement(op->Value, arr);
+}
+
+function Cur() Token { return Pek(0); }
+function Pek(offset int) Token { return tokens[offset + pointer]; }
+function Skip() { while (~Cur()->Type = "whitespace") pointer++; }
+function Consume(ttype string) Token 
+{
+    Skip();
+    if (~Cur()->Type != ttype)
+    {
+        SetConsoleForeground(12);
+        Print("[!] Expected '" + ttype + "' but got '" + ~Cur()->Type + "'");
+        die(0);
+    }
+    pointer++; return Pek(-1);
+}
+function ConsumeNext() Token 
+{
+    Skip();
+    pointer++; return Pek(-1);
+}

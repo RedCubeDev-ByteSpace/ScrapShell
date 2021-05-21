@@ -1,0 +1,9 @@
+class Token
+{
+    function Constructor(ttype string, tval string, pos int)
+    {
+        set Type <- ttype;
+        set Value <- tval;
+        set Position <- pos;
+    }
+}

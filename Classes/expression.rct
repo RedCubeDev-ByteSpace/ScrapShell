@@ -1,0 +1,11 @@
+class Expression
+{
+    function Constructor(etype string, val string, obj any, left Expression, right Expression)
+    {
+        set Type <- etype;
+        set Value <- val;
+        set Object <- obj;
+        set Left <- left;
+        set Right <- right;
+    }
+}

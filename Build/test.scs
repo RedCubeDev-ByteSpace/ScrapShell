@@ -1,0 +1,13 @@
+print "hello world"
+
+loop:
+
+set myvar=69
+print {"haha funi number " . $myvar}
+
+set myvar={myvar + 1}
+print {"unfuni: " . $myvar}
+
+if {myvar == 70} goto loop
+
+print "bruh moment"

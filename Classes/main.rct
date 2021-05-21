@@ -1,0 +1,60 @@
+// ScrapShell Interpreter  -  ReCT bc Lua succ [2.2.3 btw]
+package sys; use sys;
+package io;
+
+set verbose <- false;
+set file <- "./Resources/simpletest.scs";
+
+#attach("statement.rct");
+#attach("token.rct");
+#attach("expression.rct");
+#attach("lexer.rct");
+#attach("parser.rct");
+#attach("interpreter.rct");
+#copyFolder("/home/redcube/Code/ReCT/ScrapShell/Resources");
+
+io::ChangeDirectory("./Build");
+
+if (verbose) Print("Small ScrapShell Interpreter  -  written in ReCT");
+
+
+set code <- io::ReadFile(file);
+
+Lex();
+tokens->Push(make Token("EOF", "", code->GetLength()));
+if (verbose) prettyPrintTokens();
+
+Parse();
+
+if (verbose) Print("-- [ Interpreting ] --");
+
+Interpret();
+
+function prettyPrintTokens()
+{
+    var longestkw <- 0;
+    var longestval <- 0;
+
+    from (i <- 0) to tokens->GetLength() -1 {
+        if ((~~tokens[i]->Type->GetLength()) > longestkw) longestkw <- ~~tokens[i]->Type->GetLength(); 
+        if ((~~tokens[i]->Value->GetLength()) > longestval) longestval <- ~~~~tokens[i]->Value->Replace(Char(10), "\n")->Replace(Char(13), "\r")->GetLength(); 
+    }
+
+    from (i <- 0) to tokens->GetLength() -1
+        if (~tokens[i]->Type != "whitespace")
+        {
+            SetConsoleForeground(15); Write("[Token: "); SetConsoleForeground(10); Write(~tokens[i]->Type); Write("," + getSpace(~~tokens[i]->Type->GetLength(), longestkw));
+            SetConsoleForeground(15); Write(" Value: "); SetConsoleForeground(3); Write(~~~tokens[i]->Value->Replace(Char(10), "\n")->Replace(Char(13), "\r")); SetConsoleForeground(15); Write("," + getSpace(~string(~tokens[i]->Value)->GetLength(), longestval));
+            SetConsoleForeground(15);  Write(" Pos: "); SetConsoleForeground(8); Write(string(~tokens[i]->Position));
+            SetConsoleForeground(15); Print("]");
+        }
+}
+
+function getSpace(len int, longest int) string
+{
+    var out <- "";
+    from (i <- len) to longest
+        out <-+ " ";
+
+    return out;
+}

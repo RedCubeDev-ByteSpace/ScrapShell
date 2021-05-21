@@ -1,0 +1,138 @@
+set tokens <- make Token array(0);
+set pointer <- 0;
+
+function Lex()
+{
+    while (!EOF())
+    {
+        var p <- pointer;
+
+        // space; tab; newline
+        if (Current() = " ") { tokens->Push(make Token("whitespace", Current(), p)); pointer++; continue;} 
+        if (Current() = Char(9)) { tokens->Push(make Token("whitespace", Current(), p)); pointer++; continue; } 
+        if (Current() = Char(10)) { tokens->Push(make Token("whitespace", Current(), p)); pointer++; continue; } 
+        if (Current() = Char(13)) { tokens->Push(make Token("whitespace", Current(), p)); pointer++; continue; } 
+
+        //operators
+        if (Current() = "+") { tokens->Push(make Token("plus", Current(), p)); pointer++; continue; } 
+        if (Current() = "-") { tokens->Push(make Token("minus", Current(), p)); pointer++; continue; } 
+        if (Current() = "*") { tokens->Push(make Token("times", Current(), p)); pointer++; continue; } 
+        if (Current() = "/") { tokens->Push(make Token("divide", Current(), p)); pointer++; continue; } 
+        if (Current() = ".") { tokens->Push(make Token("concat", Current(), p)); pointer++; continue; } 
+
+        //comperators
+        if (Current() = "=") { tokens->Push(make Token("equals", Current(), p)); pointer++; continue; } 
+        if (Current() = "<" && Peek(1)!= "=") { tokens->Push(make Token("less", Current(), p)); pointer++; continue; } 
+        if (Current() = ">" && Peek(1)!= "=") { tokens->Push(make Token("greater", Current(), p)); pointer++; continue; } 
+        if (Current() = "!" && Peek(1) = "=") { tokens->Push(make Token("notequals", Current() + Peek(1), p)); pointer <-+ 2; continue; } 
+        if (Current() = "<" && Peek(1) = "=") { tokens->Push(make Token("lessequals", Current() + Peek(1), p)); pointer <-+ 2; continue; } 
+        if (Current() = ">" && Peek(1) = "=") { tokens->Push(make Token("greaterequals", Current() + Peek(1), p)); pointer <-+ 2; continue; } 
+
+        //brackets
+        if (Current() = "{") { tokens->Push(make Token("openbrace", Current(), p)); pointer++; continue; } 
+        if (Current() = "}") { tokens->Push(make Token("closebrace", Current(), p)); pointer++; continue; } 
+        if (Current() = "[") { tokens->Push(make Token("openbracket", Current(), p)); pointer++; continue; } 
+        if (Current() = "]") { tokens->Push(make Token("closebracket", Current(), p)); pointer++; continue; } 
+
+        //prefixes
+        if (Current() = "$") { tokens->Push(make Token("varprefix", Current(), p)); pointer++; continue; } 
+        if (Current() = ":") { tokens->Push(make Token("labelprefix", Current(), p)); pointer++; continue; } 
+
+        //strings
+        if (Current() = Char(34)) { tokens->Push(make Token("string", LexString(), p)); pointer++; continue; } 
+
+        //numbers
+        if (IsDigit(Current())) { tokens->Push(make Token("number", LexNumber(), p)); pointer++; continue; } 
+
+        //keyword
+        if (IsLetter(Current())) { tokens->Push(make Token("keyword", LexKeyword(), p)); pointer++; continue; } 
+
+        //comment
+        if (Current() = "#") { tokens->Push(make Token("whitespace", LexComment(), p)); pointer++; continue; } 
+        if (Current() = ";") { tokens->Push(make Token("whitespace", LexComment(), p)); pointer++; continue; } 
+
+        Print("Bruh wtf is " + Current() + " ???");
+        die(0);
+    }
+}
+
+function LexString() string
+{
+    pointer++;
+    var str <- "";
+
+    while (Current() != Char(34))
+    {
+        if (EOF()) { Print("String not terminated!"); die(0); }
+        str <-+ code->Substring(pointer, 1);
+        pointer++;
+    }
+
+    return str;
+}
+
+function LexKeyword() string
+{
+    var str <- "";
+
+    while (IsLetter(Current()) && !EOF())
+    {
+        str <-+ code->Substring(pointer, 1);
+        pointer++;
+    }
+    pointer--;
+
+    return str;
+}
+
+function LexNumber() string
+{
+    var str <- "";
+
+    while (IsDigit(Current()) && !EOF())
+    {
+        str <-+ code->Substring(pointer, 1);
+        pointer++;
+    }
+    pointer--;
+
+    return str;
+}
+
+function LexComment() string
+{
+    while (Current() != Char(10) && !EOF())
+        pointer++;
+    pointer--;
+
+    return "";
+}
+
+function IsLetter(char string) bool
+{
+    var letters <- "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    from (i <- 0) to letters->GetLength() -1
+    {
+        if (char = letters->Substring(i, 1)) return true;
+    }
+
+    return false;
+}
+
+function IsDigit(char string) bool
+{
+    var digits <- "1234567890";
+
+    from (i <- 0) to digits->GetLength() -1
+    {
+        if (char = digits->Substring(i, 1)) return true;
+    }
+
+    return false;
+}
+
+function Current() string { return Peek(0); }
+function Peek(offset int) string { if (EOFO(offset)) return ""; return code->Substring(pointer + offset, 1); }
+function EOF() bool { return pointer >= code->GetLength() }
+function EOFO(offset int) bool { return pointer + offset >= code->GetLength() }

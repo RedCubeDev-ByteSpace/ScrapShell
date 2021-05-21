@@ -1,0 +1,8 @@
+class Statement
+{
+    function Constructor(cmd string, args ExpressionArr)
+    {
+        set Cmd <- cmd;
+        set Args <- args;
+    }
+}
