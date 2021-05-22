@@ -80,6 +80,10 @@ function ParseKeyword() Statement
     {
         return ParseMath();
     }
+    else if (string(~Cur()->Value) = "die")
+    {
+        return ParseDie();
+    }
 
     SetConsoleForeground(12); Print("[!] Couldnt find Keyword '" + ~Cur()->Value + "'");
     die(0);
@@ -208,6 +212,7 @@ function ParseIf() Statement
     arr->Push(ParseExpression());
     arr->Push(make Expression("operator", ~ConsumeNext()->Value, nil, Expression(nil), Expression(nil)));
     arr->Push(ParseExpression());
+    Consume("labelprefix");
     arr->Push(make Expression("indentifier", ~Consume("keyword")->Value, nil, Expression(nil), Expression(nil)));
 
     return make Statement(ifkw->Value, arr);
@@ -221,6 +226,13 @@ function ParseMath() Statement
     arr->Push(ParseExpression());
 
     return make Statement(op->Value, arr);
+}
+function ParseDie() Statement
+{
+    var diekw <- Consume("keyword");
+    var arr <- make Expression array(0);
+
+    return make Statement(diekw->Value, arr);
 }
 
 function Cur() Token { return Pek(0); }

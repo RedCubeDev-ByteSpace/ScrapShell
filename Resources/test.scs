@@ -1,13 +1,53 @@
-print "hello world"
+# ScrapShell test.scs
+set count = 0
+set col = 0
 
 :loop
+   goto nextcolor
+   :ret
 
-set myvar = 69
-print [con "haha funi number " $myvar]
+   color $col
 
-set myvar = [add $myvar 1]
-print [con "unfuni: " $myvar]
+   write [con "The first ever compiler in ReCT is done!  " $count]
+   write " "
+   goto prog
+   :pret
+   set count = [add $count 1]
 
-if $myvar != 70 loop
+if $count <= 100 :loop
+print "deded"
+die
 
-print "bruh moment"
+:nextcolor
+   set col = [add $col 1]
+
+   if $col = 6  :skip
+   if $col >= 15 :reset
+goto ret
+
+:skip
+   set col = [add $col 3]
+goto ret
+
+:reset
+   set col = 1
+goto ret
+
+:prog
+   if $count = 100 :nospace
+      write " "
+   :nospace
+   write "["
+   set lcount = 0
+   :ploop
+      write "#"
+      set lcount = [add $lcount 1]
+   if $lcount < [div $count 10] :ploop
+   if $lcount = 10 :done
+   :ploopn
+      write "."
+      set lcount = [add $lcount 1]
+   if $lcount < 10 :ploopn 
+   :done
+   print "]"
+goto pret

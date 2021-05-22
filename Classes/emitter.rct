@@ -1,0 +1,342 @@
+set varnames <- make string array(0);
+set addresses <- make string array(0);
+set adrpointer <- 0;
+
+set dryrun <- true;
+
+set IL <- "";
+
+function Emit(out string)
+{
+    // boilerplate
+    IL <-+ ".assembly 'IL.dll' {"+Char(10)+".hash algorithm 0x00000000"+Char(10)+".ver  1:0:0:0 }" + Char(10);
+    IL <-+ ".class public auto ansi abstract sealed beforefieldinit Program extends [System.Private.CoreLib]System.Object {" + Char(10);
+    
+    RegisterVars();
+
+    from (i <- 0) to varnames->GetLength() - 1
+    {
+         IL <-+ ".field private static object " + (varnames[i]) + Char(10);
+    }
+
+    IL <-+ ".method public hidebysig static void Main () cil managed {" + Char(10);
+    IL <-+ ".entrypoint" + Char(10);
+    IL <-+ ".maxstack 8" + Char(10);
+
+    from (i <- 0) to statements->GetLength() - 1
+    {
+        var args <- ~statements[i]->Args;
+
+        emitInternal(statements[i], args, false);
+    }
+
+    dryrun <- false;
+
+    from (i <- 0) to statements->GetLength() - 1
+    {
+        var args <- ~statements[i]->Args;
+
+        emitInternal(statements[i], args, false);
+    }
+
+    IL <-+ "ret" + Char(10);
+    IL <-+ "}}" + Char(10);
+
+    io::WriteFile(out, IL);
+    io::WriteFile("IL.runtimeconfig.json", ~"{'runtimeOptions': {'tfm': 'netcoreapp3.1','framework': {'name': 'Microsoft.NETCore.App','version': '5.0.6'}}}"->Replace("'", Char(34)));
+
+    LaunchApplicationAndWait("ilasm", "/dll ./IL.il");
+}
+
+function emitInternal(stmt Statement, inargs ExpressionArr, internal bool)
+{
+    if (stmt->Cmd = "print")
+    {
+        if (!internal) RegisterAddress();
+        LoadValue(inargs[0]);
+        ILR("call string [System.Private.CoreLib]System.Convert::ToString(object)" + Char(10));
+        ILR("call void [System.Console]System.Console::WriteLine(string)" + Char(10));
+
+        if (internal) LoadValue(inargs[0]);
+    }
+    else if (stmt->Cmd = "write")
+    {
+        if (!internal) RegisterAddress();
+        LoadValue(inargs[0]);
+        ILR("call string [System.Private.CoreLib]System.Convert::ToString(object)" + Char(10));
+        ILR("call void [System.Console]System.Console::Write(string)" + Char(10));
+
+        if (internal) LoadValue(inargs[0]);
+    }
+    else if (stmt->Cmd = "clear")
+    {
+        if (!internal) RegisterAddress();
+        ILR("call void [System.Console]System.Console::Clear()" + Char(10));
+
+        if (internal) ILR("ldc.i4.0" + Char(10));
+    }
+    else if (stmt->Cmd = "color")
+    {
+        if (!internal) RegisterAddress();
+        LoadValue(inargs[0]);
+        ILR("call int32 [System.Private.CoreLib]System.Convert::ToInt32(object)" + Char(10));
+        ILR("call void [System.Console]System.Console::set_ForegroundColor(valuetype [System.Console]System.ConsoleColor)" + Char(10));
+
+        if (internal) LoadValue(inargs[0]);
+    }
+    else if (stmt->Cmd = "input")
+    {
+        if (!internal) RegisterAddress();
+        ILR("call string [System.Console]System.Console::ReadLine()" + Char(10));
+    }
+    else if (stmt->Cmd = "set")
+    {
+        if (!internal) RegisterAddress();
+        LoadValue(inargs[1]);
+        SetVar(~inargs[0]->Value);
+
+        if (internal) LoadValue(inargs[1]);
+    }
+    else if (stmt->Cmd = "sleep")
+    {
+        if (!internal) RegisterAddress();
+        LoadValue(inargs[0]);
+        ILR("call int32 [System.Private.CoreLib]System.Convert::ToInt32(object)" + Char(10));
+        ILR("call void [System.Private.CoreLib]System.Threading.Thread::Sleep(int32)" + Char(10));
+        if (internal) LoadValue(inargs[0]);
+    }
+    else if (stmt->Cmd = "add")
+    {
+        if (!internal) RegisterAddress();
+        LoadValue(inargs[0]);
+        ILR("call int32 [System.Private.CoreLib]System.Convert::ToInt32(object)" + Char(10));
+        LoadValue(inargs[1]);
+        ILR("call int32 [System.Private.CoreLib]System.Convert::ToInt32(object)" + Char(10));
+        ILR("add" + Char(10));
+        ILR("box [System.Private.CoreLib]System.Int32" + Char(10));
+    }
+    else if (stmt->Cmd = "sub")
+    {
+        if (!internal) RegisterAddress();
+        LoadValue(inargs[0]);
+        ILR("call int32 [System.Private.CoreLib]System.Convert::ToInt32(object)" + Char(10));
+        LoadValue(inargs[1]);
+        ILR("call int32 [System.Private.CoreLib]System.Convert::ToInt32(object)" + Char(10));
+        ILR("sub" + Char(10));
+        ILR("box [System.Private.CoreLib]System.Int32" + Char(10));
+    }
+    else if (stmt->Cmd = "mul")
+    {
+        if (!internal) RegisterAddress();
+        LoadValue(inargs[0]);
+        ILR("call int32 [System.Private.CoreLib]System.Convert::ToInt32(object)" + Char(10));
+        LoadValue(inargs[1]);
+        ILR("call int32 [System.Private.CoreLib]System.Convert::ToInt32(object)" + Char(10));
+        ILR("mul" + Char(10));
+        ILR("box [System.Private.CoreLib]System.Int32" + Char(10));
+    }
+    else if (stmt->Cmd = "div")
+    {
+        if (!internal) RegisterAddress();
+        LoadValue(inargs[0]);
+        ILR("call int32 [System.Private.CoreLib]System.Convert::ToInt32(object)" + Char(10));
+        LoadValue(inargs[1]);
+        ILR("call int32 [System.Private.CoreLib]System.Convert::ToInt32(object)" + Char(10));
+        ILR("div" + Char(10));
+        ILR("box [System.Private.CoreLib]System.Int32" + Char(10));
+    }
+    else if (stmt->Cmd = "con")
+    {
+        if (!internal) RegisterAddress();
+        LoadValue(inargs[0]);
+        ILR("call string [System.Private.CoreLib]System.Convert::ToString(object)" + Char(10));
+        LoadValue(inargs[1]);
+        ILR("call string [System.Private.CoreLib]System.Convert::ToString(object)" + Char(10));
+        ILR("call string [System.Private.CoreLib]System.String::Concat(string, string)"+ Char(10));
+    }
+    else if (stmt->Cmd = "label")
+    {
+        if (!internal) RegisterAddress();
+        ILR("nop" + Char(10));
+
+        if (internal) ILR("ldc.i4.0" + Char(10));
+    }
+    else if (stmt->Cmd = "goto")
+    {
+        if (internal){ Print(""); SetConsoleForeground(12); Print("[!] Cant use goto in []!"); die(0); }
+        if (!internal) RegisterAddress();
+
+        ILR("br " + LabelAddress(~inargs[0]->Value) + Char(10));
+    }
+    else if (stmt->Cmd = "if")
+    {
+        if (internal){ Print(""); SetConsoleForeground(12); Print("[!] Cant use if in []!"); die(0); }
+        if (!internal) RegisterAddress();
+        LoadValue(inargs[0]);
+        ILR("call int32 [System.Private.CoreLib]System.Convert::ToInt32(object)" + Char(10));
+        var op <- ~inargs[1]->Value;
+        LoadValue(inargs[2]);
+        ILR("call int32 [System.Private.CoreLib]System.Convert::ToInt32(object)" + Char(10));
+
+        if (op = "=") { 
+            ILR("ceq" + Char(10));
+            ILR("brtrue "+ LabelAddress(~inargs[3]->Value) + Char(10));
+        } else if (op = "!=") { 
+            ILR("ceq" + Char(10));
+            ILR("ldc.i4 0" + Char(10));
+            ILR("ceq" + Char(10));
+            ILR("brtrue "+ LabelAddress(~inargs[3]->Value) + Char(10));
+        } else if (op = "<") { 
+            ILR("clt" + Char(10));
+            ILR("brtrue "+ LabelAddress(~inargs[3]->Value) + Char(10));
+        } else if (op = ">") { 
+            ILR("cgt" + Char(10));
+            ILR("brtrue "+ LabelAddress(~inargs[3]->Value) + Char(10));
+        } else if (op = "<=") { 
+            ILR("cgt" + Char(10));
+            ILR("ldc.i4 0" + Char(10));
+            ILR("ceq" + Char(10));
+            ILR("brtrue "+ LabelAddress(~inargs[3]->Value) + Char(10));
+        } else if (op = ">=") { 
+            ILR("clt" + Char(10));
+            ILR("ldc.i4 0" + Char(10));
+            ILR("ceq" + Char(10));
+            ILR("brtrue "+ LabelAddress(~inargs[3]->Value) + Char(10));
+        }
+    }
+    else if (stmt->Cmd = "die")
+    {
+        if (!internal) RegisterAddress();
+        ILR("ldc.i4 0" + Char(10));
+        ILR("call void [System.Private.CoreLib]System.Environment::Exit(int32)" + Char(10));
+    }
+}
+
+function LoadValue(ex Expression)
+{
+    if (ex->Type = "string")   { ILR("ldstr " + Char(34) + ex->Value + Char(34) + Char(10)); };
+    if (ex->Type = "number")   { ILR("ldc.i4 " + ex->Value + Char(10)); ILR("box [System.Private.CoreLib]System.Int32" + Char(10)); };
+    if (ex->Type = "variable") { LoadVar(ex->Value); };
+    if (ex->Type = "statement")
+    {
+        var eargs <- ~Statement(ex->Object)->Args
+        emitInternal(Statement(ex->Object), eargs, true);
+    }
+}
+
+function LoadVar(name string) 
+{
+    from (index <- 0) to varnames->GetLength() -1
+    {
+        if ((varnames[index]) = name) 
+        {
+           ILR("ldsfld object Program::" + name + Char(10));
+           return;
+        }
+    }
+
+    SetConsoleForeground(12);
+    Print("[!] Couldnt find Variable! Got: " + name);
+    die(0);
+}
+
+function SetVar(name string)
+{
+    from (i <- 0) to varnames->GetLength() -1
+    {
+        if ((varnames[i]) = name)
+        {
+            ILR("stsfld object Program::" + name + Char(10));
+            return;
+        }
+    }
+
+    Print("");
+    SetConsoleForeground(12);
+    Print("[!] Couldnt find Variable! Got: " + name);
+    die(0);
+}
+
+function RegisterVars()
+{
+   from (i <- 0) to statements->GetLength() -1
+   {
+      if (~statements[i]->Cmd = "set")
+      {
+         var stmtargs <- ~statements[i]->Args;
+         if (!AlreadyRegistered(~stmtargs[0]->Value))
+         {
+            varnames->Push(~stmtargs[0]->Value);
+         }
+      }
+   }
+}
+
+function AlreadyRegistered(name string) bool
+{
+   from (i <- 0) to varnames->GetLength() - 1
+      if ((varnames[i]) = name) return true;
+
+   return false;
+}
+
+function ILR(il string)
+{
+    var parts <- il->Split(" ");
+
+    if (!dryrun)
+    {
+        IL <-+ il;
+        Print(~parts[0]->Replace(Char(10),"") + ": " + dectohex(adrpointer));
+    }
+    else
+        Print("Dry " + ~parts[0]->Replace(Char(10),"") + ": " + string(adrpointer) + " : " + dectohex(adrpointer));
+
+    if ((parts[0]) = "nop" + Char(10)) adrpointer <-+ 1;
+    else if ((parts[0]) = "ret" + Char(10)) adrpointer <-+ 1;
+    else if ((parts[0]) = "pop" + Char(10)) adrpointer <-+ 1;
+    else if ((parts[0]) = "add" + Char(10)) adrpointer <-+ 1;
+    else if ((parts[0]) = "sub" + Char(10)) adrpointer <-+ 1;
+    else if ((parts[0]) = "mul" + Char(10)) adrpointer <-+ 1;
+    else if ((parts[0]) = "div" + Char(10)) adrpointer <-+ 1;
+    else if ((parts[0]) = "clt" + Char(10)) adrpointer <-+ 2;
+    else if ((parts[0]) = "cgt" + Char(10)) adrpointer <-+ 2;
+    else if ((parts[0]) = "ceq" + Char(10)) adrpointer <-+ 2;
+    else if ((parts[0]) = "br") adrpointer <-+ 5
+    else if ((parts[0]) = "brtrue") adrpointer <-+ 5
+    else if ((parts[0]) = "ldstr") adrpointer <-+ 5;
+    else if ((parts[0]) = "ldc.i4") adrpointer <-+ 5;
+    else if ((parts[0]) = "stsfld") adrpointer <-+ 5;
+    else if ((parts[0]) = "call") adrpointer <-+ 5;
+    else if ((parts[0]) = "box") adrpointer <-+ 5;
+    else if ((parts[0]) = "ldsfld") adrpointer <-+ 5;
+    else Print("NOT COUNTING: " + (parts[0]));
+}
+
+function RegisterAddress()
+{
+    if (dryrun) addresses->Push(string(adrpointer));
+}
+
+function LabelAddress(label string) string
+{
+    if (dryrun) {Print("Dryrunning"); return ""};
+
+    from (i <- 0) to statements->GetLength() -1
+    {
+        if (~statements[i]->Cmd = "label")
+        {
+            var labargs <- ~statements[i]->Args;
+            if (~labargs[0]->Value = label)
+            {
+                return addresses[i];
+            }
+        }
+    }
+    
+    Print("");
+    SetConsoleForeground(12);
+    Print("[!] Couldnt find Label! Got: " + label);
+    die(0);
+    return "";
+}

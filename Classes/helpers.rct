@@ -1,0 +1,29 @@
+function mod(a int, b int) int
+{
+    var val <- a;
+    while (val >= b) val <-- b;
+    return val;
+}
+
+function dectohex(dec int) string
+{
+    var hex <- "";
+    var n <- dec;
+
+    while (n != 0)
+    {
+        var tmp <- mod(n, 16);
+
+        if (tmp < 10)
+            hex <- Char(tmp + 48) + hex;
+        else
+            hex <- Char(tmp + 55) + hex;
+
+        n <-/ 16;
+    }
+
+    from (i <- hex->GetLength()) 4
+        hex <- "0" + hex;
+
+    return hex;
+}

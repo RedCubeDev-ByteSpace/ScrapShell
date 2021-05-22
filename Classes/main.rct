@@ -3,14 +3,15 @@ package sys; use sys;
 package io;
 
 set verbose <- false;
-set file <- "./Resources/simpletest.scs";
+set file <- "./Resources/test.scs";
 
 #attach("statement.rct");
 #attach("token.rct");
 #attach("expression.rct");
 #attach("lexer.rct");
 #attach("parser.rct");
-#attach("interpreter.rct");
+#attach("emitter.rct");
+#attach("helpers.rct");
 #copyFolder("/home/redcube/Code/ReCT/ScrapShell/Resources");
 
 io::ChangeDirectory("./Build");
@@ -28,7 +29,7 @@ Parse();
 
 if (verbose) Print("-- [ Interpreting ] --");
 
-Interpret();
+Emit("./IL.il");
 
 function prettyPrintTokens()
 {

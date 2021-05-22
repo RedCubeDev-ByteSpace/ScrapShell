@@ -3,6 +3,7 @@ set varvals <- make any array(0);
 
 set index <- 0;
 set args <- make Expression array(0);
+set watch <- make stopwatch::StopWatch();
 
 function Interpret()
 {
@@ -102,6 +103,10 @@ function interpretInternal(stmt Statement, inargs ExpressionArr) any
     else if (stmt->Cmd = "con")
     {
         return string(GetValue(inargs[0])) + string(GetValue(inargs[1]));
+    }
+    else if (stmt->Cmd = "die")
+    {
+        die(0);
     }
     return "";
 }

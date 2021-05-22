@@ -1,0 +1,14 @@
+startwatch
+
+set loops = 999
+set i = 0
+
+:loop
+
+print [con "loop " $i]
+set i = [add $i 1]
+
+if $i <= $loops loop
+
+print "done"
+print [stopwatch]
