@@ -1,7 +1,12 @@
-# ScrapShell  -  A scripting language made entirely in ReCT
+# ScrapShell  -  A programming language made entirely in ReCT
 ScrapShell was an experiment to see if it was possible to create an interpreted Programming language in ReCT.
 
 Turns out it very much is possible (even if my example language is pretty simplistic)
+
+## Compilation
+ScrapShell is now a compiled language! I swapped out the Interpreter with an Emitter and now it compiles down to IL. (requires ilasm to be installed)
+
+The code for the interpreter is still part of the project so if you like the Interpreted mode more you can use that one instead.
 
 ## Spaghetti Code
 Just letting you peeps know that to work around ReCTs limitations i had to do quite some <i>badness</i>. So uh please dont be too hard on me.
