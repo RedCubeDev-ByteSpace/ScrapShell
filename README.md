@@ -76,7 +76,7 @@ To do if statements you can use the if command followed by a <b>label</b>. There
 :loop
 set variable = 1
 
-if $variable = 1 loop
+if $variable = 1 :loop
 ```
 Supported operators are = != < > <= >=
 
@@ -107,4 +107,10 @@ To make a comment just use the # or ; prefix.
 ```
 # this is a comment
 ; this too is a comment
+```
+
+### Halting the Program
+To completely Halt the program you can use the die command.
+```
+die
 ```
